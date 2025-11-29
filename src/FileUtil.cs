@@ -1,7 +1,31 @@
 namespace DotProj;
 
-internal class Walker
+internal class FileUtil
 {
+    public static void CopyDirectory(string dir, string targetDir)
+    {
+        // Make sure directory exist
+        Directory.CreateDirectory(targetDir);
+
+        // Copy files
+        foreach (var file in Directory.GetFiles(dir))
+        {
+            var fileName = Path.GetFileName(file);
+            var destName = Path.Combine(targetDir, fileName);
+            File.Copy(file, destName);
+        }
+
+        // Now get directories
+        foreach (var subDir in Directory.GetDirectories(dir))
+        {
+            var dirName = Path.GetFileName(subDir);
+            var destName = Path.Combine(targetDir, dirName);
+
+            // Recursive call
+            CopyDirectory(subDir, destName);
+        }   
+    }
+
     public static void DeleteDirectory(string directory)
     {
         if (!Directory.Exists(directory)) return;

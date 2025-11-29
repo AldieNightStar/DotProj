@@ -5,7 +5,8 @@ internal class Project
     private static string[] PROJECT_COMMANDS = ["pack", "release"];
     
     private const string OUTPUT_NAME = "APP";
-    private static string[] IGNORE_DIRS = ["bin", "obj"];
+    private static string[] IGNORE_DIRS = [OUTPUT_NAME, "bin", "obj", "src"];
+    private static string[] IGNORE_FILES = ["dotnet-tools.json"];
 
     
     public static void RunCommand(Action<string> log, string projectDir, string[] args)
@@ -84,14 +85,8 @@ internal class Project
 
         // Make sure OUTPUT_NAME directory is created and empty
         var appDir = Path.Combine(projectDir, OUTPUT_NAME);
-        if (Directory.Exists(appDir)) Walker.DeleteDirectory(appDir);
+        if (Directory.Exists(appDir)) FileUtil.DeleteDirectory(appDir);
         Directory.CreateDirectory(appDir);
-
-        // Clear OUTPUT_NAME directory
-        foreach (var file in Directory.GetFiles(appDir))
-        {
-            File.Delete(file);
-        }
 
         // Copy Release Output to OUTPUT_NAME directory
         foreach (var file in Directory.GetFiles(releaseDirOutput))
@@ -101,9 +96,35 @@ internal class Project
             File.Copy(file, destFileName);
         }
 
-        // TODO: Copy project files to OUTPUT_NAME
+        // Copying the rest root files into the APP directory
+        packRootDir(projectDir, appDir);
 
         return true;
+    }
+
+    private static void packRootDir(string projectDir, string targetDir)
+    {
+        // Copy directories
+        foreach (var dir in Directory.GetDirectories(projectDir))
+        {
+            var name = Path.GetFileName(dir);
+            if (IGNORE_DIRS.Contains(name)) continue;
+            if (name.StartsWith(".")) continue;
+
+            FileUtil.CopyDirectory(dir, Path.Combine(targetDir, name));
+        }
+
+        // Copy files
+        foreach (var file in Directory.GetFiles(projectDir))
+        {
+            var name = Path.GetFileName(file);
+            var ext = Path.GetExtension(file);
+            if (IGNORE_FILES.Contains(name)) continue;
+            if (name.StartsWith(".")) continue;
+            if (ext == "csproj" || ext == "sln") continue;
+
+            File.Copy(file, Path.Combine(targetDir, name));
+        }
     }
 
     public static bool PushNuget(string projectDir, string source)
@@ -113,7 +134,7 @@ internal class Project
 
         // Now check that .nupkg is found
         var binDir = Path.Combine(projectDir, "bin");
-        var nupkgFile = Walker.FindFilesExt(binDir, [".nupkg"]).FirstOrDefault();
+        var nupkgFile = FileUtil.FindFilesExt(binDir, [".nupkg"]).FirstOrDefault();
         if (nupkgFile == null) return false;
 
         // Output that file is found
@@ -173,8 +194,8 @@ internal class Project
         var binDir = Path.Combine(directory, "bin");
         var objDir = Path.Combine(directory, "obj");
         
-        Walker.DeleteDirectory(binDir);
-        Walker.DeleteDirectory(objDir);
+        FileUtil.DeleteDirectory(binDir);
+        FileUtil.DeleteDirectory(objDir);
     }
 
     public static bool IsProjectCommand(string command)
