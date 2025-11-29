@@ -13,7 +13,7 @@ class Program
         }
         var name = args[0];
 
-        if (Project.PROJECT_COMMANDS.Contains(name))
+        if (Project.IsProjectCommand(name))
         {
             Project.RunCommand(Console.WriteLine, ".", args);
         }

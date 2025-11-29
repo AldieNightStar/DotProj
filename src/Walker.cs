@@ -63,5 +63,7 @@ internal class Walker
             list.Add(dir);
             _walkDirectories(list, dir);
         }
+
+        list.Add(directory);
     }
 }

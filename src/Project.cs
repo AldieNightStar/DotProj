@@ -2,7 +2,7 @@ namespace DotProj;
 
 internal class Project
 {
-    public static string[] PROJECT_COMMANDS = ["pack", "release"];
+    private static string[] PROJECT_COMMANDS = ["pack", "release"];
     
     private const string OUTPUT_NAME = "APP";
     private static string[] IGNORE_DIRS = ["bin", "obj"];
@@ -82,9 +82,10 @@ internal class Project
         // Get inital output directory
         var releaseDirOutput = releaseDirs[0];
 
-        // Create OUTPUT_NAME directory
+        // Make sure OUTPUT_NAME directory is created and empty
         var appDir = Path.Combine(projectDir, OUTPUT_NAME);
-        if (!Directory.Exists(appDir)) Directory.CreateDirectory(appDir);
+        if (Directory.Exists(appDir)) Walker.DeleteDirectory(appDir);
+        Directory.CreateDirectory(appDir);
 
         // Clear OUTPUT_NAME directory
         foreach (var file in Directory.GetFiles(appDir))
@@ -99,6 +100,8 @@ internal class Project
             var destFileName = Path.Combine(appDir, fileName);
             File.Copy(file, destFileName);
         }
+
+        // TODO: Copy project files to OUTPUT_NAME
 
         return true;
     }
@@ -172,5 +175,10 @@ internal class Project
         
         Walker.DeleteDirectory(binDir);
         Walker.DeleteDirectory(objDir);
+    }
+
+    public static bool IsProjectCommand(string command)
+    {
+        return PROJECT_COMMANDS.Contains(command);
     }
 }
