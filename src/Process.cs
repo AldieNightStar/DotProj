@@ -1,10 +1,10 @@
-using Diag = System.Diagnostics;
-
 namespace DotProj;
+
+using Diag = System.Diagnostics;
 
 public class Process
 {
-    public static void Run(string cmd, string[] args, string dir="./")
+    public static bool Run(string cmd, string[] args, string dir="./")
     {
         var p = new Diag.ProcessStartInfo
         {
@@ -18,6 +18,7 @@ public class Process
         using (var proc = Diag.Process.Start(p))
         {
             proc?.WaitForExit();
+            return (proc?.ExitCode ?? -1) == 0;
         }
     }
 }

@@ -11,8 +11,17 @@ class Program
             showUsage();
             return;
         }
-        var type = args.ElementAtOrDefault(1) ?? "console";
-        createProject(args[0], type);
+        var name = args[0];
+
+        if (Project.PROJECT_COMMANDS.Contains(name))
+        {
+            Project.RunCommand(Console.WriteLine, ".", args);
+        }
+        else
+        {
+            var type = args.ElementAtOrDefault(1) ?? "console";
+            createProject(args[0], type);
+        }
     }
 
     private static void showUsage()
@@ -23,6 +32,10 @@ class Program
         Console.WriteLine("  dotproj project1          - Create console project");
         Console.WriteLine("  dotproj project1 console  - Create console project");
         Console.WriteLine("  dotproj project1 classlib - Create classlib project");
+        Console.WriteLine("");
+        Console.WriteLine("Inside Project:");
+        Console.WriteLine("  dotproj pack sourceName   - Push .nupkg package to local source");
+        Console.WriteLine("  dotproj release           - Release dotnet program in it's zip folder");
     }
 
     private static void createProject(string name, string type)

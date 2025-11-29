@@ -10,6 +10,5 @@
         "**/*.rpymc": true,
         "**/cache/": true
     },
-    "hide-files.files": [
-    ]
+    "hide-files.files": []
 }
