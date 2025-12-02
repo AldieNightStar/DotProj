@@ -8,4 +8,4 @@ Example:
 
 Inside Project:
   dotproj pack sourceName   - Push .nupkg package to local source
-  dotproj release           - Release dotnet program in it's zip folder
+  dotproj release           - Release dotnet program into APP directory
