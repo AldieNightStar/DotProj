@@ -3,13 +3,13 @@ namespace DotProj;
 internal class Project
 {
     private static string[] PROJECT_COMMANDS = ["pack", "release"];
-    
+
     private const string OUTPUT_NAME = "APP";
     private static string[] IGNORE_DIRS = [OUTPUT_NAME, "bin", "obj", "src"];
     private static string[] IGNORE_FILES = ["dotnet-tools.json"];
     private static string[] IGNORE_EXTENSIONS = [".sln", ".csproj"];
 
-    
+
     public static void RunCommand(Action<string> log, string projectDir, string[] args)
     {
         if (Project.IsProjectDirectory(projectDir))
@@ -63,26 +63,15 @@ internal class Project
     public static bool Release(Action<string> log, string projectDir)
     {
         // Build the project
-        if (!buildProject(projectDir)) return false;
+        if (!publishProject(projectDir)) return false;
 
-        // Find release dir
-        var releaseDir = Path.Combine(projectDir, "bin", "Release");
-        if (!Directory.Exists(releaseDir))
+        // Get publish directory
+        var publishDir = GetPublishDirectory(projectDir);
+        if (publishDir == default)
         {
-            log("[!] No Release directory");
+            log("[!] Can't find publish directory");
             return false;
         }
-
-        // Find first directory in the Release directory
-        var releaseDirs = Directory.GetDirectories(releaseDir);
-        if (releaseDirs == null || releaseDirs.Length < 1)
-        {
-            log("[!] Release directory doesn't contain any release versions");
-            return false;
-        }
-        
-        // Get inital output directory
-        var releaseDirOutput = releaseDirs[0];
 
         // Make sure OUTPUT_NAME directory is created and empty
         var appDir = Path.Combine(projectDir, OUTPUT_NAME);
@@ -90,7 +79,7 @@ internal class Project
         Directory.CreateDirectory(appDir);
 
         // Copy Release Output to OUTPUT_NAME directory
-        foreach (var file in Directory.GetFiles(releaseDirOutput))
+        foreach (var file in Directory.GetFiles(publishDir))
         {
             var fileName = Path.GetFileName(file);
             File.Copy(file, Path.Combine(appDir, fileName));
@@ -178,6 +167,12 @@ internal class Project
         return Process.Run("dotnet", ["build", "--configuration", "release"], dir: directory);
     }
 
+    private static bool publishProject(string directory)
+    {
+        // --sc
+        return Process.Run("dotnet", ["publish"], dir: directory);
+    }
+
     public static IEnumerable<string> GetSlnProjectDirectories(string directory)
     {
         foreach (var dir in Directory.GetDirectories(directory))
@@ -198,7 +193,7 @@ internal class Project
     {
         var binDir = Path.Combine(directory, "bin");
         var objDir = Path.Combine(directory, "obj");
-        
+
         FileUtil.DeleteDirectory(binDir);
         FileUtil.DeleteDirectory(objDir);
     }
@@ -206,5 +201,17 @@ internal class Project
     public static bool IsProjectCommand(string command)
     {
         return PROJECT_COMMANDS.Contains(command);
+    }
+
+    public static string? GetPublishDirectory(string projectDir)
+    {
+        var releaseDir = Path.Combine(projectDir, "bin", "Release");
+        var netDir = Directory.GetDirectories(releaseDir).FirstOrDefault();
+        if (netDir == default) return null;
+
+        var publishDir = Path.Combine(netDir, "publish");
+        if (!Directory.Exists(publishDir)) return null;
+
+        return publishDir;
     }
 }
