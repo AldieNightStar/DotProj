@@ -7,6 +7,7 @@ internal class Project
     private const string OUTPUT_NAME = "APP";
     private static string[] IGNORE_DIRS = [OUTPUT_NAME, "bin", "obj", "src"];
     private static string[] IGNORE_FILES = ["dotnet-tools.json"];
+    private static string[] IGNORE_EXTENSIONS = [".sln", ".csproj"];
 
     
     public static void RunCommand(Action<string> log, string projectDir, string[] args)
@@ -92,8 +93,7 @@ internal class Project
         foreach (var file in Directory.GetFiles(releaseDirOutput))
         {
             var fileName = Path.GetFileName(file);
-            var destFileName = Path.Combine(appDir, fileName);
-            File.Copy(file, destFileName);
+            File.Copy(file, Path.Combine(appDir, fileName));
         }
 
         // Copying the rest root files into the APP directory
@@ -120,8 +120,8 @@ internal class Project
             var name = Path.GetFileName(file);
             var ext = Path.GetExtension(file);
             if (IGNORE_FILES.Contains(name)) continue;
+            if (IGNORE_EXTENSIONS.Contains(ext)) continue;
             if (name.StartsWith(".")) continue;
-            if (ext == "csproj" || ext == "sln") continue;
 
             File.Copy(file, Path.Combine(targetDir, name));
         }
@@ -130,7 +130,7 @@ internal class Project
     public static bool PushNuget(string projectDir, string source)
     {
         // Build the project
-        if (!buildProject(projectDir)) return false;
+        if (!packProject(projectDir)) return false;
 
         // Now check that .nupkg is found
         var binDir = Path.Combine(projectDir, "bin");
@@ -168,9 +168,14 @@ internal class Project
         return false;
     }
 
-    private static bool buildProject(string directory)
+    private static bool packProject(string directory)
     {
         return Process.Run("dotnet", ["pack", "--configuration", "release"], dir: directory);
+    }
+
+    private static bool buildProject(string directory)
+    {
+        return Process.Run("dotnet", ["build", "--configuration", "release"], dir: directory);
     }
 
     public static IEnumerable<string> GetSlnProjectDirectories(string directory)
