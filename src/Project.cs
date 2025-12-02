@@ -12,7 +12,7 @@ internal class Project
 
     public static void RunCommand(Action<string> log, string projectDir, string[] args)
     {
-        if (Project.IsProjectDirectory(projectDir))
+        if (IsProjectDirectory(projectDir))
         {
             _runCommand(log, projectDir, args);
         }
@@ -137,24 +137,15 @@ internal class Project
     {
         var files = Directory.GetFiles(dir);
         if (files == null) return false;
-        foreach (var file in files)
-        {
-            var ext = Path.GetExtension(file);
-            if (ext == ".csproj") return true;
-        }
-        return false;
+
+        return files.Any(f => Path.GetExtension(f) == ".csproj");
     }
 
     public static bool IsSolutionDirectory(string dir)
     {
         var files = Directory.GetFiles(dir);
         if (files == null) return false;
-        foreach (var file in files)
-        {
-            var ext = Path.GetExtension(file);
-            if (ext == ".sln") return true;
-        }
-        return false;
+        return files.Any(f => Path.GetExtension(f) == ".sln");
     }
 
     private static bool packProject(string directory)
