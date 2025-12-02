@@ -35,7 +35,7 @@ class Program
         Console.WriteLine("");
         Console.WriteLine("Inside Project:");
         Console.WriteLine("  dotproj pack sourceName   - Push .nupkg package to local source");
-        Console.WriteLine("  dotproj release           - Release dotnet program in it's zip folder");
+        Console.WriteLine("  dotproj release           - Release dotnet program into APP directory");
     }
 
     private static void createProject(string name, string type)
