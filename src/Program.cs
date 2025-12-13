@@ -46,6 +46,7 @@ class Program
             return;
         }
         var projectDir = Directory.CreateDirectory(name).FullName;
+        var subProjectDir = Path.Combine(projectDir, name);
 
         // Create new dotnet build
         Process.Run("dotnet", ["new", "sln"], dir: projectDir);
@@ -60,6 +61,12 @@ class Program
 
         // Make Test aware of project
         Process.Run("dotnet", ["add", "Test", "reference", name], dir: projectDir);
+
+        // Make Project also sharing internals to Test project
+        Project.CreatePropertyFile(subProjectDir,
+            "InternalsVisible.cs",
+            "using System.Runtime.CompilerServices;\n\n[assembly: InternalsVisibleTo(\"Test\")]\n"
+        );
 
         // Create folders
         var src = Directory.CreateDirectory(Path.Combine(projectDir, name, "src")).FullName;

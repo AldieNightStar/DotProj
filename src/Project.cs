@@ -205,4 +205,13 @@ internal class Project
 
         return publishDir;
     }
+
+    public static void CreatePropertyFile(string projectDir, string name, string src)
+    {
+        var propertiesDir = Path.Combine(projectDir, "Properties");
+        if (!Directory.Exists(propertiesDir)) Directory.CreateDirectory(propertiesDir);
+
+        var file = Path.Combine(propertiesDir, name);
+        File.WriteAllText(file, src);
+    }
 }
