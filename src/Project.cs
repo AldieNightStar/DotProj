@@ -43,7 +43,7 @@ internal class Project
                 return;
             }
             var source = args[1];
-            if (!PushNuget(projectDir, source))
+            if (!PushNuget(Console.WriteLine, projectDir, source))
             {
                 log("[!] Wasn't able to publish package.");
                 log("  - Make sure project is building ok");
@@ -160,7 +160,7 @@ internal class Project
         }
     }
 
-    public static bool PushNuget(string projectDir, string source)
+    public static bool PushNuget(Action<string> log, string projectDir, string source)
     {
         // Build the project
         if (!packProject(projectDir)) return false;
@@ -171,7 +171,7 @@ internal class Project
         if (nupkgFile == null) return false;
 
         // Output that file is found
-        Console.WriteLine("Found nuget package: " + nupkgFile);
+        log("Found nuget package: " + nupkgFile);
 
         // Publishing with dotnet
         return Process.Run("dotnet", ["nuget", "push", nupkgFile, "--source", source], dir: projectDir);
