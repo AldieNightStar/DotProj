@@ -51,8 +51,13 @@ class Program
         // Create new dotnet build
         Process.Run("dotnet", ["new", "sln"], dir: projectDir);
 
-        // Add projects
-        Process.Run("dotnet", ["new", type, "-n", name, "-aot", "true"], dir: projectDir);
+        // Create project
+        if (type == "console")
+            Process.Run("dotnet", ["new", type, "-n", name, "-aot", "true"], dir: projectDir);
+        else
+            Process.Run("dotnet", ["new", type, "-n", name], dir: projectDir);
+
+        // Create unit test
         Process.Run("dotnet", ["new", "xunit", "-n", "Test"], dir: projectDir);
 
         // Add into sln

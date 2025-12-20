@@ -60,11 +60,41 @@ internal class Project
         }
     }
 
-    public static bool Release(Action<string> log, string projectDir)
+    private static string recreateOutputDirectory(string projectDir)
     {
-        // Build the project
-        if (!publishProject(projectDir)) return false;
+        var outDir = Path.Combine(projectDir, OUTPUT_NAME);
+        if (Directory.Exists(outDir)) FileUtil.DeleteDirectory(outDir);
+        Directory.CreateDirectory(outDir);
+        return outDir;
+    }
 
+    private static bool releaseNonNative(Action<string> log, string projectDir)
+    {
+        var pubDir = GetPublishDirectory(projectDir);
+        if (pubDir == null)
+        {
+            log("[!] Can't get publish directory");
+            return false;
+        }
+
+        // Create output directory, or replace if exists
+        var outDir = recreateOutputDirectory(projectDir);
+        
+        // Copy files from publish directory
+        foreach (var file in Directory.GetFiles(pubDir))
+        {
+            var fileName = Path.GetFileName(file);
+            File.Copy(file, Path.Combine(outDir, fileName));
+        }
+
+        // Copying the rest root files into the output directory
+        packRootDir(projectDir, outDir);
+
+        return true;
+    }
+
+    private static bool releaseNative(Action<string> log, string projectDir)
+    {
         // Get publish directory
         var nativeDir = GetNativeDirectory(projectDir);
         if (nativeDir == null)
@@ -73,23 +103,36 @@ internal class Project
             return false;
         }
 
-        // Make sure OUTPUT_NAME directory is created and empty
-        var appDir = Path.Combine(projectDir, OUTPUT_NAME);
-        if (Directory.Exists(appDir)) FileUtil.DeleteDirectory(appDir);
-        Directory.CreateDirectory(appDir);
+        // Create output directory, or replace if exists
+        var outDir = recreateOutputDirectory(projectDir);
 
         // Copy Release Output to OUTPUT_NAME directory
-        Console.WriteLine("NATIVE " + nativeDir);
         foreach (var file in Directory.GetFiles(nativeDir))
         {
             var fileName = Path.GetFileName(file);
-            File.Copy(file, Path.Combine(appDir, fileName));
+            File.Copy(file, Path.Combine(outDir, fileName));
         }
 
-        // Copying the rest root files into the APP directory
-        packRootDir(projectDir, appDir);
+        // Copying the rest root files into the output directory
+        packRootDir(projectDir, outDir);
 
         return true;
+    }
+
+    public static bool Release(Action<string> log, string projectDir)
+    {
+        // Build the project
+        if (!publishProject(projectDir)) return false;
+
+        // Release project, based on native/non-native nature
+        if (IsAOT(projectDir))
+        {
+            return releaseNative(log, projectDir);
+        }
+        else
+        {
+            return releaseNonNative(log, projectDir);
+        }
     }
 
     private static void packRootDir(string projectDir, string targetDir)
@@ -189,11 +232,16 @@ internal class Project
         return PROJECT_COMMANDS.Contains(command);
     }
 
-    public static string? GetNativeDirectory(string projectDir)
+    private static string? getDotNetBuildDirectory(string projectDir)
     {
         var releaseDir = Path.Combine(projectDir, "bin", "Release");
-        var netDir = Directory.GetDirectories(releaseDir)
-            .FirstOrDefault(name => Path.GetFileName(name).StartsWith("net"));
+        return Directory.GetDirectories(releaseDir)
+            .FirstOrDefault(dir => Path.GetFileName(dir).StartsWith("net"));
+    }
+
+    public static string? GetNativeDirectory(string projectDir)
+    {
+        var netDir = getDotNetBuildDirectory(projectDir);
         if (netDir == default) return null;
         
         // Find Native directory
@@ -203,6 +251,16 @@ internal class Project
         return nativeDir;
     }
 
+    public static string? GetPublishDirectory(string projectDir)
+    {
+        var netDir = getDotNetBuildDirectory(projectDir);
+        if (netDir == default) return null;
+        
+        var pubDir = Directory.GetDirectories(netDir).FirstOrDefault(dir => Path.GetFileName(dir) == "publish");
+        if (pubDir == null) return netDir;
+        return pubDir;
+    }
+
     public static void CreatePropertyFile(string projectDir, string name, string src)
     {
         var propertiesDir = Path.Combine(projectDir, "Properties");
@@ -210,5 +268,14 @@ internal class Project
 
         var file = Path.Combine(propertiesDir, name);
         File.WriteAllText(file, src);
+    }
+
+    public static bool IsAOT(string projectDir)
+    {
+        var csproj = Directory.GetFiles(projectDir).FirstOrDefault(f=>Path.GetExtension(f) == ".csproj");
+        if (csproj == null) return false;
+
+        var text = File.ReadAllText(csproj);
+        return text.Contains("<PublishAot>true");
     }
 }
