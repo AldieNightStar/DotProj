@@ -70,14 +70,14 @@ internal class FileUtil
         };
     }
 
-    public static List<string> WalkDirectories(string directory)
+    public static HashSet<string> WalkDirectories(string directory)
     {
-        var list = new List<string>();
+        var list = new HashSet<string>();
         _walkDirectories(list, directory);
         return list;
     }
 
-    private static void _walkDirectories(List<string> list, string directory)
+    private static void _walkDirectories(HashSet<string> list, string directory)
     {
         var dirs = Directory.GetDirectories(directory);
         if (dirs == null) return;

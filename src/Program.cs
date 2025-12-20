@@ -52,7 +52,7 @@ class Program
         Process.Run("dotnet", ["new", "sln"], dir: projectDir);
 
         // Add projects
-        Process.Run("dotnet", ["new", type, "-n", name], dir: projectDir);
+        Process.Run("dotnet", ["new", type, "-n", name, "-aot", "true"], dir: projectDir);
         Process.Run("dotnet", ["new", "xunit", "-n", "Test"], dir: projectDir);
 
         // Add into sln

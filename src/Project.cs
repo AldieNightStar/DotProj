@@ -5,7 +5,7 @@ internal class Project
     private static string[] PROJECT_COMMANDS = ["pack", "release"];
 
     private const string OUTPUT_NAME = "APP";
-    private static string[] IGNORE_DIRS = [OUTPUT_NAME, "bin", "obj", "src"];
+    private static string[] IGNORE_DIRS = [OUTPUT_NAME, "bin", "obj", "src", "Properties"];
     private static string[] IGNORE_FILES = ["dotnet-tools.json"];
     private static string[] IGNORE_EXTENSIONS = [".sln", ".csproj"];
 
@@ -66,10 +66,10 @@ internal class Project
         if (!publishProject(projectDir)) return false;
 
         // Get publish directory
-        var publishDir = GetPublishDirectory(projectDir);
-        if (publishDir == default)
+        var nativeDir = GetNativeDirectory(projectDir);
+        if (nativeDir == null)
         {
-            log("[!] Can't find publish directory");
+            log("[!] Can't find native directory");
             return false;
         }
 
@@ -79,7 +79,8 @@ internal class Project
         Directory.CreateDirectory(appDir);
 
         // Copy Release Output to OUTPUT_NAME directory
-        foreach (var file in Directory.GetFiles(publishDir))
+        Console.WriteLine("NATIVE " + nativeDir);
+        foreach (var file in Directory.GetFiles(nativeDir))
         {
             var fileName = Path.GetFileName(file);
             File.Copy(file, Path.Combine(appDir, fileName));
@@ -153,14 +154,8 @@ internal class Project
         return Process.Run("dotnet", ["pack", "--configuration", "release"], dir: directory);
     }
 
-    private static bool buildProject(string directory)
-    {
-        return Process.Run("dotnet", ["build", "--configuration", "release"], dir: directory);
-    }
-
     private static bool publishProject(string directory)
     {
-        // --sc
         return Process.Run("dotnet", ["publish"], dir: directory);
     }
 
@@ -194,16 +189,18 @@ internal class Project
         return PROJECT_COMMANDS.Contains(command);
     }
 
-    public static string? GetPublishDirectory(string projectDir)
+    public static string? GetNativeDirectory(string projectDir)
     {
         var releaseDir = Path.Combine(projectDir, "bin", "Release");
-        var netDir = Directory.GetDirectories(releaseDir).FirstOrDefault();
+        var netDir = Directory.GetDirectories(releaseDir)
+            .FirstOrDefault(name => Path.GetFileName(name).StartsWith("net"));
         if (netDir == default) return null;
-
-        var publishDir = Path.Combine(netDir, "publish");
-        if (!Directory.Exists(publishDir)) return null;
-
-        return publishDir;
+        
+        // Find Native directory
+        var nativeDir = FileUtil.WalkDirectories(netDir)
+            .FirstOrDefault(dir => Path.GetFileName(dir) == "native");
+        if (nativeDir == null) return null;
+        return nativeDir;
     }
 
     public static void CreatePropertyFile(string projectDir, string name, string src)
