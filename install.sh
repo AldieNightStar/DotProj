@@ -1,8 +1,9 @@
 #!/bin/bash
-dotnet build --configuration release
+dotnet publish --configuration release
 
 rm -rf APP
 mkdir APP
 
-mv bin/Release/net10.0/* APP/
+mv bin/Release/*/*/native/* APP/
 mv APP/DotProj.exe APP/dotproj.exe
+mv APP/DotProj APP/dotproj
