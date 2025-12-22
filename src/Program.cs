@@ -53,7 +53,7 @@ class Program
 
         // Create project
         if (type == "console")
-            Process.Run("dotnet", ["new", type, "-n", name, "-aot", "true"], dir: projectDir);
+            Process.Run("dotnet", ["new", type, "-n", name, "--aot", "true"], dir: projectDir);
         else
             Process.Run("dotnet", ["new", type, "-n", name], dir: projectDir);
 
