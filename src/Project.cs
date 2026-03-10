@@ -189,7 +189,10 @@ internal class Project
     {
         var files = Directory.GetFiles(dir);
         if (files == null) return false;
-        return files.Any(f => Path.GetExtension(f) == ".sln");
+        return files.Any(f => {
+            var ext = Path.GetExtension(f);
+            return ext == ".sln" || ext == ".slnx";
+        });
     }
 
     private static bool packProject(string directory)
